@@ -2,7 +2,9 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,6 +16,7 @@ import (
 // Builtin commands. Needs to be updated with every new command. Must be sorted.
 // Cannot be const unfortunately.
 var builtin_commands = [...]string{
+	"cd",
 	"echo",
 	"exit",
 	"pwd",
@@ -28,8 +31,9 @@ func main() {
 		// Wait for user input
 		s, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		if err != nil {
+			// TODO: Should use a better way of checking the error
 			// End shell on end of file
-			if err.Error() == "EOF" {
+			if errors.Is(err, io.EOF) {
 				// Add extra newline for formatting reasons
 				fmt.Println()
 				os.Exit(0)
@@ -68,6 +72,8 @@ func main() {
 				continue
 			}
 			fmt.Println(cwd)
+		} else if cmd[0] == "cd" {
+			handle_cd(cmd[1:])
 		} else if cmd[0] == "type" {
 			handle_type(cmd[1:])
 		} else if cmd_abspath := find_executable(cmd[0]); cmd_abspath != "" {
@@ -90,21 +96,21 @@ func handle_exit(args []string) {
 	} else if len(args) == 1 {
 		num, err := strconv.ParseInt(args[0], 10, 32)
 		if err != nil {
-			fmt.Printf("exit: could not parse exit code\n%v\n", err)
+			fmt.Fprintf(os.Stderr, "exit: could not parse exit code\n%v\n", err)
 			return
 		}
 		os.Exit(int(num))
 	} else {
-		fmt.Println("exit: too many arguments")
+		fmt.Fprintln(os.Stderr, "exit: too many arguments")
 	}
 }
 
 // Handles the `type` command.
 func handle_type(args []string) {
 	if len(args) == 0 {
-		fmt.Println("type: too few arguments")
+		fmt.Fprintln(os.Stderr, "type: too few arguments")
 	} else if len(args) > 1 {
-		fmt.Println("type: too many arguments")
+		fmt.Fprintln(os.Stderr, "type: too many arguments")
 	} else {
 		_, found := slices.BinarySearch(builtin_commands[:], args[0])
 		if found {
@@ -113,6 +119,29 @@ func handle_type(args []string) {
 			fmt.Printf("%s is %s\n", args[0], abspath)
 		} else {
 			fmt.Printf("%s: not found\n", args[0])
+		}
+	}
+}
+
+func handle_cd(args []string) {
+	if len(args) > 1 {
+		fmt.Fprintln(os.Stderr, "cd: too many arguments")
+	} else if len(args) == 0 || args[0] == "~" {
+		os.Chdir(os.Getenv("HOME"))
+	} else {
+		file_info, err := os.Stat(args[0])
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				fmt.Fprintf(os.Stderr, "cd: %s: No such file or directory\n", args[0])
+				return
+			} else {
+				fmt.Fprintf(os.Stderr, "Error: cd: %v\n", err)
+				return
+			}
+		} else if !file_info.IsDir() {
+			fmt.Fprintf(os.Stderr, "cd: not a directory: %s\n", args[0])
+		} else {
+			os.Chdir(args[0])
 		}
 	}
 }
