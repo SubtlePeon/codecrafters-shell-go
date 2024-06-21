@@ -51,7 +51,6 @@ func main() {
 			}
 		}
 
-		// All commands are unknown to us
 		if len(cmd) == 0 {
 			// Just pass
 		} else if cmd[0] == "exit" {
