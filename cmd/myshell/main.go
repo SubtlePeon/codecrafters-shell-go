@@ -4,9 +4,16 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 )
+
+var builtin_commands = []string{
+	"echo",
+	"exit",
+	"type",
+}
 
 func main() {
 	for true {
@@ -38,6 +45,8 @@ func main() {
 			s = strings.TrimPrefix(s, "echo")
 			s = strings.TrimPrefix(s, " ")
 			fmt.Println(s)
+		} else if cmd[0] == "type" {
+			handle_type(cmd[1:])
 		} else {
 			fmt.Printf("%s: command not found\n", s)
 		}
@@ -46,11 +55,11 @@ func main() {
 
 // Handles the `exit` command. The arguments after "exit" should be split and
 // passed in.
-func handle_exit(cmd []string) {
-	if len(cmd) == 0 {
+func handle_exit(args []string) {
+	if len(args) == 0 {
 		os.Exit(0)
-	} else if len(cmd) == 1 {
-		num, err := strconv.ParseInt(cmd[0], 10, 32)
+	} else if len(args) == 1 {
+		num, err := strconv.ParseInt(args[0], 10, 32)
 		if err != nil {
 			fmt.Printf("exit: could not parse exit code\n%v\n", err)
 			return
@@ -58,5 +67,21 @@ func handle_exit(cmd []string) {
 		os.Exit(int(num))
 	} else {
 		fmt.Println("exit: too many arguments")
+	}
+}
+
+func handle_type(args []string) {
+	if len(args) == 0 {
+		fmt.Println("type: too few arguments")
+	} else if len(args) > 1 {
+		fmt.Println("type: too many arguments")
+	} else {
+		_, found := slices.BinarySearch(builtin_commands, args[0]) 
+		if found {
+			fmt.Printf("%s is a shell builtin\n", args[0])
+		} else {
+			// Currently nothing else other than shell builtins
+			fmt.Printf("%s: not found\n", args[0])
+		}
 	}
 }
