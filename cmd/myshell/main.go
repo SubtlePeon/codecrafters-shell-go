@@ -31,7 +31,6 @@ func main() {
 		// Wait for user input
 		s, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		if err != nil {
-			// TODO: Should use a better way of checking the error
 			// End shell on end of file
 			if errors.Is(err, io.EOF) {
 				// Add extra newline for formatting reasons
