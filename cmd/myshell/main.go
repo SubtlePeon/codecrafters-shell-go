@@ -129,6 +129,9 @@ func handle_cd(args []string) {
 	} else if len(args) == 0 || args[0] == "~" {
 		os.Chdir(os.Getenv("HOME"))
 	} else {
+		// TODO: handle cases:
+		// - "~/path/to/somewhere"
+		// - "$HOME/path/to/somewhere"
 		file_info, err := os.Stat(args[0])
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
