@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"slices"
 	"strconv"
@@ -57,6 +58,12 @@ func main() {
 			fmt.Println(s)
 		} else if cmd[0] == "type" {
 			handle_type(cmd[1:])
+		} else if cmd_abspath := find_executable(cmd[0]); cmd_abspath != "" {
+			command := exec.Command(cmd[0], cmd[1:]...)
+			command.Stdin = os.Stdin
+			command.Stdout = os.Stdout
+			command.Stderr = os.Stderr
+			command.Run()
 		} else {
 			fmt.Printf("%s: command not found\n", s)
 		}
@@ -87,7 +94,7 @@ func handle_type(args []string) {
 	} else if len(args) > 1 {
 		fmt.Println("type: too many arguments")
 	} else {
-		_, found := slices.BinarySearch(builtin_commands[:], args[0]) 
+		_, found := slices.BinarySearch(builtin_commands[:], args[0])
 		if found {
 			fmt.Printf("%s is a shell builtin\n", args[0])
 		} else if abspath := find_executable(args[0]); abspath != "" {
@@ -132,7 +139,8 @@ func find_executable(command string) string {
 
 		files, err := os.ReadDir(walk_path)
 		// Ignore errors
-		if err != nil {}
+		if err != nil {
+		}
 		for _, file := range files {
 			if file.Name() == command {
 				// We found it, return early.
