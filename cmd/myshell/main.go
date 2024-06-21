@@ -4,12 +4,15 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
 )
 
-var builtin_commands = []string{
+// Builtin commands. Needs to be updated with every new command. Must be sorted.
+// Cannot be const unfortunately.
+var builtin_commands = [...]string{
 	"echo",
 	"exit",
 	"type",
@@ -23,6 +26,13 @@ func main() {
 		// Wait for user input
 		s, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		if err != nil {
+			// End shell on end of file
+			if err.Error() == "EOF" {
+				// Add extra newline for formatting reasons
+				fmt.Println()
+				os.Exit(0)
+			}
+
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
@@ -70,18 +80,65 @@ func handle_exit(args []string) {
 	}
 }
 
+// Handles the `type` command.
 func handle_type(args []string) {
 	if len(args) == 0 {
 		fmt.Println("type: too few arguments")
 	} else if len(args) > 1 {
 		fmt.Println("type: too many arguments")
 	} else {
-		_, found := slices.BinarySearch(builtin_commands, args[0]) 
+		_, found := slices.BinarySearch(builtin_commands[:], args[0]) 
 		if found {
 			fmt.Printf("%s is a shell builtin\n", args[0])
+		} else if abspath := find_executable(args[0]); abspath != "" {
+			fmt.Printf("%s is %s\n", args[0], abspath)
 		} else {
-			// Currently nothing else other than shell builtins
 			fmt.Printf("%s: not found\n", args[0])
 		}
 	}
+}
+
+// Finds an executable with the `PATH` environmental variable. If the
+// executable cannot be found, returns an empty string. Otherwise, returns
+// the absolute path to the executable.
+// - Finds the first match
+func find_executable(command string) string {
+	env_path := strings.Split(os.Getenv("PATH"), ":")
+	for _, walk_path := range env_path {
+		if !filepath.IsAbs(walk_path) {
+			new_path, err := filepath.Abs(walk_path)
+			if err != nil {
+				// Something went wrong, skip this one
+				fmt.Fprintf(
+					os.Stderr,
+					"Couldn't convert '%s' to abspath",
+					walk_path,
+				)
+				continue
+			}
+			walk_path = new_path
+		}
+
+		file_info, err := os.Stat(walk_path)
+		if err != nil {
+			// Probably invalid path, check next path
+			continue
+		}
+
+		// Only check directories
+		if !file_info.IsDir() {
+			continue
+		}
+
+		files, err := os.ReadDir(walk_path)
+		// Ignore errors
+		if err != nil {}
+		for _, file := range files {
+			if file.Name() == command {
+				// We found it, return early.
+				return filepath.Join(walk_path, file.Name())
+			}
+		}
+	}
+	return ""
 }
