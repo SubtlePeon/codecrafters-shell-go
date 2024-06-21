@@ -19,7 +19,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
-		s = strings.TrimSpace(s)
+		s = strings.TrimSuffix(s, "\n")
 
 		cmd := strings.Split(s, " ")
 
@@ -34,6 +34,10 @@ func main() {
 			// Just pass
 		} else if cmd[0] == "exit" {
 			handle_exit(cmd[1:])
+		} else if cmd[0] == "echo" {
+			s = strings.TrimPrefix(s, "echo")
+			s = strings.TrimPrefix(s, " ")
+			fmt.Println(s)
 		} else {
 			fmt.Printf("%s: command not found\n", s)
 		}
