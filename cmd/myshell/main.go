@@ -130,7 +130,7 @@ func handle_cd(args []string) {
 		// TODO: handle cases:
 		// - "~/path/to/somewhere"
 		// - "$HOME/path/to/somewhere"
-		// TODO: can just use `os.Chdir` instead of using `os.`
+		// TODO: can just use `os.Chdir` instead of using `os.Stat`
 		file_info, err := os.Stat(args[0])
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
