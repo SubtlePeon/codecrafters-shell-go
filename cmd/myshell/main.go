@@ -16,6 +16,7 @@ import (
 var builtin_commands = [...]string{
 	"echo",
 	"exit",
+	"pwd",
 	"type",
 }
 
@@ -56,6 +57,17 @@ func main() {
 			s = strings.TrimPrefix(s, "echo")
 			s = strings.TrimPrefix(s, " ")
 			fmt.Println(s)
+		} else if cmd[0] == "pwd" {
+			if len(cmd) > 1 {
+				fmt.Fprintln(os.Stderr, "pwd: too many arguments")
+				continue
+			}
+			cwd, err := os.Getwd()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error: pwd: %v\n", err)
+				continue
+			}
+			fmt.Println(cwd)
 		} else if cmd[0] == "type" {
 			handle_type(cmd[1:])
 		} else if cmd_abspath := find_executable(cmd[0]); cmd_abspath != "" {
@@ -65,7 +77,7 @@ func main() {
 			command.Stderr = os.Stderr
 			command.Run()
 		} else {
-			fmt.Printf("%s: command not found\n", s)
+			fmt.Fprintf(os.Stderr, "%s: command not found\n", s)
 		}
 	}
 }
