@@ -38,4 +38,4 @@
 # Codecrafters "Shell" Challenge
 Written in Go (to learn). As of June 21st, 2024, this code completes all the tasks (as the challenge is still in beta). There are some improvements to be made still.
 
-Will come back to this after I do some other challenges.
+Will come back to this after I do some other challenges. (I should have set my email to something other than `Example <example@example.com>`, don't really want to amend them now)
